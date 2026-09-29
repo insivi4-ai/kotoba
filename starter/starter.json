@@ -1,0 +1,22 @@
+{
+  "name": "Первые слова",
+  "cards": [
+    { "kanji": "鳥", "kana": "とり", "translation": "птица", "image": "tori.webp" },
+    { "kanji": "家", "kana": "うち", "translation": "дом", "image": "uchi.webp" },
+    { "kanji": "狼", "kana": "おおかみ", "translation": "волк", "image": "ookami.webp" },
+    { "kanji": "", "kana": "も", "translation": "тоже", "image": "mo.webp" },
+    { "kanji": "泥棒", "kana": "どろぼう", "translation": "вор", "image": "dorobou.webp" },
+    { "kanji": "羊", "kana": "ひつじ", "translation": "овца", "image": "hitsuji.webp" },
+    { "kanji": "医者", "kana": "いしゃ", "translation": "врач", "image": "isha.webp" },
+    { "kanji": "", "kana": "ねずみ", "translation": "мышь", "image": "nezumi.webp" },
+    { "kanji": "", "kana": "はりねずみ", "translation": "ёж", "image": "harinezumi.webp" },
+    { "kanji": "行きます", "kana": "いきます", "translation": "идти", "image": "ikimasu.webp" },
+    { "kanji": "", "kana": "たこ", "translation": "осьминог", "image": "tako.webp" },
+    { "kanji": "赤い", "kana": "あかい", "translation": "красный", "image": "akai.webp" },
+    { "kanji": "", "kana": "いか", "translation": "кальмар", "image": "ika.webp" },
+    { "kanji": "大きい", "kana": "おおきい", "translation": "большой", "image": "ookii.webp" },
+    { "kanji": "小さい", "kana": "ちいさい", "translation": "маленький", "image": "chiisai.webp" },
+    { "kanji": "青い", "kana": "あおい", "translation": "синий, голубой", "image": "aoi.webp" },
+    { "kanji": "戦い", "kana": "たたかい", "translation": "битва", "image": "tatakai.webp" }
+  ]
+}
