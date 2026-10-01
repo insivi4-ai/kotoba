@@ -113,6 +113,9 @@ const ICONS = {
   pen: 'M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z',
   choice: 'M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11',
   swap: 'M7 16V4M3 8l4-4 4 4M17 8v12M21 16l-4 4-4-4',
+  folder: 'M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z',
+  folderMove: 'M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2zM9 13h6M13 10.5l2.5 2.5-2.5 2.5',
+  layers: 'M12 2l10 5-10 5L2 7zM2 17l10 5 10-5M2 12l10 5 10-5',
 };
 
 export function Icon({ name, size = 22 }) {
@@ -137,7 +140,7 @@ export function TabBar({ active }) {
   const tab = (href, icon, label, names) => html`<a href=${href}
     class=${'tab' + (names.includes(active) ? ' active' : '')}><${Icon} name=${icon} /><span>${label}</span></a>`;
   return html`<nav class="tabbar">
-    ${tab('#/', 'deck', 'Колоды', ['home', 'deck'])}
+    ${tab('#/', 'deck', 'Колоды', ['home', 'deck', 'folder'])}
     ${tab('#/add', 'plus', 'Добавить', ['add', 'edit', 'bulk'])}
     ${tab('#/settings', 'settings', 'Настройки', ['settings'])}
   </nav>`;
@@ -289,6 +292,21 @@ export function StaticCard({ card, dir, hideImage, reveal }) {
       <//>
     </div>
   </div>`;
+}
+
+// Пункты <select> с колодами: сначала колоды без папки, затем по папкам.
+export function DeckOptions({ decks, folders = [] }) {
+  const inFolder = (f) => decks.filter((d) => d.folderId === f.id);
+  const loose = decks.filter((d) => !d.folderId || !folders.some((f) => f.id === d.folderId));
+  return html`
+    ${loose.map((d) => html`<option value=${d.id}>${d.name}</option>`)}
+    ${folders
+      .filter((f) => inFolder(f).length)
+      .map(
+        (f) => html`<optgroup label=${'📁 ' + f.name}>
+          ${inFolder(f).map((d) => html`<option value=${d.id}>${d.name}</option>`)}
+        </optgroup>`
+      )}`;
 }
 
 export function Thumb({ blob, fallback }) {

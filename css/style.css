@@ -575,6 +575,189 @@ select.input {
   font-weight: 700;
 }
 
+/* «Учить всё» на главной */
+.launcher {
+  margin: 4px 0 8px;
+  padding: 14px 14px 10px;
+  border: 1.5px solid var(--frame);
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+.launcher-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.launcher-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+.launcher-sub {
+  font-size: 13px;
+  color: var(--muted);
+}
+.launcher .chip {
+  font-family: var(--font-ui), var(--font-jp);
+  white-space: nowrap;
+}
+.quick-modes {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.quick-mode {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 4px 10px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--accent);
+  text-decoration: none;
+  transition: transform 0.12s, border-color 0.15s;
+}
+.quick-mode:hover {
+  border-color: var(--frame);
+  transform: translateY(-1px);
+}
+.quick-mode:active {
+  transform: scale(0.97);
+}
+.quick-mode span {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+.quick-mode.disabled {
+  opacity: 0.45;
+}
+.quick-badge {
+  position: absolute;
+  top: -7px;
+  right: -5px;
+  min-width: 22px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff !important;
+  font-size: 12px !important;
+  text-align: center;
+}
+.launcher-link {
+  display: block;
+  margin-top: 10px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* Папка: обложка из картинок её колод */
+.deck-cover.mosaic {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 2px;
+  background: var(--frame);
+}
+.mosaic-cell {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: repeating-linear-gradient(45deg, var(--bg-2) 0 8px, #e6d9be 8px 16px);
+}
+.folder-badge {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1.5px solid var(--frame);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--accent);
+}
+.scope-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.topbar-sub .icon {
+  display: inline-block;
+  vertical-align: -2px;
+}
+
+/* Списки выбора в окнах (папка для колоды, колоды для папки) */
+.pick-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  max-height: 50vh;
+  overflow: auto;
+}
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  text-align: left;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pick:hover {
+  border-color: var(--line-strong);
+}
+.pick > span {
+  flex: 1;
+}
+.pick.on {
+  border-color: var(--indigo);
+  background: var(--indigo-soft);
+  color: var(--indigo);
+}
+.pick .icon {
+  color: var(--accent);
+}
+.pick.on .icon {
+  color: var(--indigo);
+}
+.checkbox {
+  display: grid !important;
+  flex: none !important;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--paper);
+}
+.checkbox.on {
+  border-color: var(--indigo);
+  background: var(--indigo);
+}
+.checkbox.on .icon {
+  color: #fff;
+}
+
 .thumb-img {
   display: block;
   width: 100%;

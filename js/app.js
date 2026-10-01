@@ -3,6 +3,7 @@ import { seedIfNeeded } from './starter.js';
 import { TabBar, Toasts, Loading } from './ui.js';
 import { Home } from './views/home.js';
 import { DeckView } from './views/deck.js';
+import { FolderView } from './views/folder.js';
 import { Editor } from './views/editor.js';
 import { Bulk } from './views/bulk.js';
 import { Settings } from './views/settings.js';
@@ -54,8 +55,11 @@ function App() {
     case 'deck':
       view = html`<${DeckView} key=${params[0]} id=${params[0]} />`;
       break;
+    case 'folder':
+      view = html`<${FolderView} key=${params[0]} id=${params[0]} />`;
+      break;
     case 'study':
-      view = html`<${Study} key=${params.join('/')} deckId=${params[0]} mode=${params[1]} />`;
+      view = html`<${Study} key=${params.join('/')} scope=${params[0]} mode=${params[1]} />`;
       tabs = false;
       break;
     case 'add':

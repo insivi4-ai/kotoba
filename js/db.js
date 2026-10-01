@@ -1,6 +1,6 @@
-// Хранилище в IndexedDB: колоды, карточки (с картинками-Blob), прогресс повторения, служебные флаги.
+// Хранилище в IndexedDB: папки, колоды, карточки (с картинками-Blob), прогресс повторения, служебные флаги.
 const DB_NAME = 'kotoba';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise;
 
@@ -8,14 +8,25 @@ function open() {
   if (!dbPromise) {
     dbPromise = new Promise((resolve, reject) => {
       const req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = () => {
+      // Миграции по шагам: у уже установленного приложения данные сохраняются.
+      req.onupgradeneeded = (e) => {
         const db = req.result;
-        db.createObjectStore('decks', { keyPath: 'id' });
-        db.createObjectStore('cards', { keyPath: 'id' }).createIndex('deckId', 'deckId');
-        db.createObjectStore('progress', { keyPath: 'id' }).createIndex('cardId', 'cardId');
-        db.createObjectStore('meta', { keyPath: 'key' });
+        if (e.oldVersion < 1) {
+          db.createObjectStore('decks', { keyPath: 'id' });
+          db.createObjectStore('cards', { keyPath: 'id' }).createIndex('deckId', 'deckId');
+          db.createObjectStore('progress', { keyPath: 'id' }).createIndex('cardId', 'cardId');
+          db.createObjectStore('meta', { keyPath: 'key' });
+        }
+        if (e.oldVersion < 2) {
+          db.createObjectStore('folders', { keyPath: 'id' });
+        }
       };
-      req.onsuccess = () => resolve(req.result);
+      req.onsuccess = () => {
+        const db = req.result;
+        // Новая версия приложения в другой вкладке — уступаем ей базу.
+        db.onversionchange = () => db.close();
+        resolve(db);
+      };
       req.onerror = () => reject(req.error);
     });
   }
@@ -51,6 +62,45 @@ export const uid = () =>
 
 const byCreated = (a, b) => a.createdAt - b.createdAt;
 
+// ---------- Папки ----------
+
+export async function listFolders() {
+  return (await read('folders', (s) => request(s.getAll()))).sort(byCreated);
+}
+
+export const getFolder = (id) => read('folders', (s) => request(s.get(id)));
+
+export async function createFolder(name) {
+  const folder = { id: uid(), name: name.trim() || 'Новая папка', createdAt: Date.now() };
+  await transaction(['folders'], 'readwrite', (tx) => tx.objectStore('folders').put(folder));
+  notify();
+  return folder;
+}
+
+export async function renameFolder(id, name) {
+  await transaction(['folders'], 'readwrite', async (tx) => {
+    const store = tx.objectStore('folders');
+    const folder = await request(store.get(id));
+    if (folder) store.put({ ...folder, name: name.trim() || folder.name });
+  });
+  notify();
+}
+
+// Колоды из удалённой папки не удаляются — просто становятся «без папки».
+export async function deleteFolder(id) {
+  await transaction(['folders', 'decks'], 'readwrite', async (tx) => {
+    tx.objectStore('folders').delete(id);
+    const decks = tx.objectStore('decks');
+    for (const deck of await request(decks.getAll())) {
+      if (deck.folderId === id) decks.put({ ...deck, folderId: null });
+    }
+  });
+  notify();
+}
+
+// Колода считается «без папки», если её папки нет (например, колоду импортировали отдельно).
+export const folderOf = (deck, folders) => (deck.folderId && folders.find((f) => f.id === deck.folderId)) || null;
+
 // ---------- Колоды ----------
 
 export async function listDecks() {
@@ -59,8 +109,19 @@ export async function listDecks() {
 
 export const getDeck = (id) => read('decks', (s) => request(s.get(id)));
 
-export async function createDeck(name) {
-  const deck = { id: uid(), name: name.trim() || 'Новая колода', createdAt: Date.now() };
+export async function moveDecks(deckIds, folderId) {
+  await transaction(['decks'], 'readwrite', async (tx) => {
+    const store = tx.objectStore('decks');
+    for (const id of deckIds) {
+      const deck = await request(store.get(id));
+      if (deck) store.put({ ...deck, folderId: folderId || null });
+    }
+  });
+  notify();
+}
+
+export async function createDeck(name, folderId = null) {
+  const deck = { id: uid(), name: name.trim() || 'Новая колода', folderId, createdAt: Date.now() };
   await transaction(['decks'], 'readwrite', (tx) => tx.objectStore('decks').put(deck));
   notify();
   return deck;
@@ -94,6 +155,25 @@ export async function listCards(deckId) {
 }
 
 export const getCard = (id) => read('cards', (s) => request(s.get(id)));
+
+// Набор для изучения: 'all' — все карточки, 'folder:<id>' — все колоды папки, иначе — id колоды.
+export const folderScope = (id) => 'folder:' + id;
+export const scopeFolderId = (scope) => (scope?.startsWith('folder:') ? scope.slice(7) : null);
+
+export async function decksInScope(scope) {
+  if (scope === 'all') return listDecks();
+  const folderId = scopeFolderId(scope);
+  if (folderId) return (await listDecks()).filter((d) => d.folderId === folderId);
+  const deck = await getDeck(scope);
+  return deck ? [deck] : [];
+}
+
+export async function listCardsInScope(scope) {
+  const folderId = scopeFolderId(scope);
+  if (!folderId) return listCards(scope);
+  const ids = new Set((await decksInScope(scope)).map((d) => d.id));
+  return (await listCards('all')).filter((c) => ids.has(c.deckId));
+}
 
 export async function saveCard(card) {
   const now = Date.now();
@@ -155,14 +235,19 @@ const blobToDataUrl = (blob) =>
     r.readAsDataURL(blob);
   });
 
-export async function exportData(deckId = null) {
-  const decks = deckId ? [await getDeck(deckId)] : await listDecks();
-  const cards = await listCards(deckId || 'all');
-  const progress = deckId ? [] : await read('progress', (s) => request(s.getAll()));
+// scope: 'all' — полная копия с прогрессом; колода или 'folder:<id>' — чтобы поделиться (без прогресса).
+export async function exportData(scope = 'all') {
+  const full = scope === 'all';
+  const decks = await decksInScope(scope);
+  const folderIds = new Set(decks.map((d) => d.folderId).filter(Boolean));
+  const folders = (await listFolders()).filter((f) => full || folderIds.has(f.id));
+  const cards = await listCardsInScope(scope);
+  const progress = full ? await read('progress', (s) => request(s.getAll())) : [];
   return {
     app: 'kotoba',
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
+    folders,
     decks,
     cards: await Promise.all(
       cards.map(async (c) => ({ ...c, image: c.image ? await blobToDataUrl(c.image) : null }))
@@ -178,7 +263,8 @@ export async function importData(data) {
   const cards = await Promise.all(
     data.cards.map(async (c) => ({ ...c, image: c.image ? await (await fetch(c.image)).blob() : null }))
   );
-  await transaction(['decks', 'cards', 'progress'], 'readwrite', (tx) => {
+  await transaction(['folders', 'decks', 'cards', 'progress'], 'readwrite', (tx) => {
+    (data.folders || []).forEach((f) => tx.objectStore('folders').put(f));
     (data.decks || []).forEach((d) => tx.objectStore('decks').put(d));
     cards.forEach((c) => tx.objectStore('cards').put(c));
     (data.progress || []).forEach((p) => tx.objectStore('progress').put(p));

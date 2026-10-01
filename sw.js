@@ -1,6 +1,6 @@
 // Сервис-воркер: приложение работает без интернета.
 // Список файлов и версию обновляет tools/build_sw.py — запускайте его перед каждой публикацией.
-const VERSION = '562b100f54';
+const VERSION = '4620a351ec';
 const ASSETS = [
   './',
   'index.html',
@@ -18,6 +18,7 @@ const ASSETS = [
   'js/views/bulk.js',
   'js/views/deck.js',
   'js/views/editor.js',
+  'js/views/folder.js',
   'js/views/home.js',
   'js/views/image-field.js',
   'js/views/settings.js',

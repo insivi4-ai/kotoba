@@ -1,10 +1,10 @@
 import { html, useState, useEffect } from '../../vendor/preact-htm.mjs';
-import { listDecks, saveCards, createDeck } from '../db.js';
+import { listDecks, listFolders, saveCards, createDeck } from '../db.js';
 import { loadDict, lookupExact } from '../dict.js';
 import { hasKanji, romajiInput } from '../kana.js';
 import { toKana } from '../../vendor/wanakana.mjs';
 import { persistStorage } from './settings.js';
-import { TopBar, Icon, useLive, navigate, toast, cardsWord, Loading } from '../ui.js';
+import { TopBar, Icon, DeckOptions, useLive, navigate, toast, cardsWord, Loading } from '../ui.js';
 
 const EXAMPLE = `ookami; волк
 ねこ; кошка
@@ -45,6 +45,7 @@ function parseLine(line) {
 
 export function Bulk({ deckId }) {
   const decks = useLive(listDecks, []);
+  const folders = useLive(listFolders, []);
   const [target, setTarget] = useState(deckId || '');
   const [text, setText] = useState('');
   const [rows, setRows] = useState(null);
@@ -89,7 +90,7 @@ export function Bulk({ deckId }) {
       <label class="field">
         <span>Колода</span>
         <select class="input" value=${target} onChange=${(e) => setTarget(e.target.value)}>
-          ${decks.map((d) => html`<option value=${d.id}>${d.name}</option>`)}
+          <${DeckOptions} decks=${decks} folders=${folders} />
           ${decks.length === 0 && html`<option value="">Мои слова (новая)</option>`}
         </select>
       </label>

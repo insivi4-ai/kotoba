@@ -1,5 +1,7 @@
 import { html, useState, useEffect, useRef } from '../../vendor/preact-htm.mjs';
-import { listCards, getDeck, progressMap, saveProgress, getMeta, setMeta } from '../db.js';
+import {
+  listCardsInScope, getDeck, getFolder, scopeFolderId, progressMap, saveProgress, getMeta, setMeta,
+} from '../db.js';
 import { schedule, newState, isNew, isDue, intervalLabel, startOfDay, DAY } from '../srs.js';
 import { frontText, normalizeKana, romajiInput } from '../kana.js';
 import { setPrefs, DIRS } from '../prefs.js';
@@ -202,7 +204,7 @@ function interleave(due, fresh) {
   return out;
 }
 
-function Review({ cards, back, title, prefs, deckId }) {
+function Review({ cards, back, title, prefs, scope }) {
   const dir = prefs.dir;
   const [state, setState] = useState(null);
   const [flipped, setFlipped] = useState(false);
@@ -282,7 +284,7 @@ function Review({ cards, back, title, prefs, deckId }) {
         ${remainingNew > 0 &&
         html`<button class="btn primary" onClick=${() => build(prefs.newPerDay)}>
           Учить ещё новые (${Math.min(remainingNew, prefs.newPerDay)})</button>`}
-        <a class="btn" href=${`#/study/${deckId}/cards`}>Просто полистать</a>
+        <a class="btn" href=${`#/study/${scope}/cards`}>Просто полистать</a>
       <//>`;
   }
 
@@ -546,23 +548,34 @@ function Write({ cards, back, title, prefs }) {
 
 const MODES = { cards: Flashcards, srs: Review, choice: Choice, write: Write };
 
-export function Study({ deckId, mode }) {
+// Что учим: колоду, папку ('folder:<id>') или всё ('all') — и куда возвращаться.
+async function loadScope(scope) {
+  const cards = await listCardsInScope(scope);
+  if (scope === 'all') return { cards, title: 'Все колоды', back: '#/', addHref: '#/add' };
+  const folderId = scopeFolderId(scope);
+  if (folderId) {
+    const folder = await getFolder(folderId);
+    const back = '#/folder/' + folderId;
+    return { cards, title: folder ? `Папка «${folder.name}»` : 'Папка', back, addHref: back };
+  }
+  const deck = await getDeck(scope);
+  return { cards, title: deck?.name || '', back: '#/deck/' + scope, addHref: '#/add?deck=' + scope };
+}
+
+export function Study({ scope, mode }) {
   const prefs = usePrefs();
   const [data, setData] = useState(null);
-  const back = `#/deck/${deckId}`;
 
   useEffect(() => {
-    Promise.all([listCards(deckId), deckId === 'all' ? { name: 'Все карточки' } : getDeck(deckId)]).then(([cards, deck]) =>
-      setData({ cards, deck })
-    );
-  }, [deckId]);
+    loadScope(scope).then(setData);
+  }, [scope]);
 
   if (!data) return html`<${Loading} />`;
-  const title = data.deck?.name || '';
-  if (!data.cards.length) {
+  const { cards, title, back, addHref } = data;
+  if (!cards.length) {
     return html`<${StudyHeader} back=${back} title=${title} />
-      <main class="page"><${Empty} title="В колоде нет карточек"><a class="btn primary" href=${'#/add?deck=' + deckId}>Добавить</a><//></main>`;
+      <main class="page"><${Empty} title="Здесь пока нет карточек"><a class="btn primary" href=${addHref}>Добавить</a><//></main>`;
   }
   const View = MODES[mode] || Flashcards;
-  return html`<${View} key=${prefs.dir} cards=${data.cards} back=${back} title=${title} prefs=${prefs} deckId=${deckId} />`;
+  return html`<${View} key=${prefs.dir} cards=${cards} back=${back} title=${title} prefs=${prefs} scope=${scope} />`;
 }

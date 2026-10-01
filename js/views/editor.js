@@ -1,10 +1,10 @@
 import { html, useState, useEffect, useRef } from '../../vendor/preact-htm.mjs';
-import { listDecks, listCards, getCard, saveCard, deleteCard, createDeck } from '../db.js';
+import { listDecks, listFolders, listCards, getCard, saveCard, deleteCard, createDeck } from '../db.js';
 import { loadDict, search, dictReady } from '../dict.js';
 import { romajiInput } from '../kana.js';
 import { persistStorage } from './settings.js';
 import { ImageField } from './image-field.js';
-import { TopBar, Icon, FlipCard, useLive, navigate, toast, Loading } from '../ui.js';
+import { TopBar, Icon, FlipCard, DeckOptions, useLive, navigate, toast, Loading } from '../ui.js';
 
 const LAST_DECK = 'kotoba-last-deck';
 const rememberDeck = (id) => {
@@ -81,6 +81,7 @@ const emptyForm = (deckId) => ({ kanji: '', kana: '', translation: '', image: nu
 
 export function Editor({ cardId, deckId }) {
   const decks = useLive(listDecks, []);
+  const folders = useLive(listFolders, []);
   const allCards = useLive(() => listCards('all'), []);
   const [form, setForm] = useState(cardId ? null : emptyForm(deckId));
   const [meanings, setMeanings] = useState([]);
@@ -228,7 +229,7 @@ export function Editor({ cardId, deckId }) {
         <label class="field">
           <span>Колода</span>
           <select class="input" value=${form.deckId} onChange=${(e) => set({ deckId: e.target.value })}>
-            ${decks.map((d) => html`<option value=${d.id}>${d.name}</option>`)}
+            <${DeckOptions} decks=${decks} folders=${folders} />
             ${decks.length === 0 && html`<option value="">Мои слова (новая)</option>`}
             <option value="__new">+ Новая колода…</option>
           </select>
